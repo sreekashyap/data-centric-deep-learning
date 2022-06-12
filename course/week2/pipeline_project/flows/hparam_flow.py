@@ -115,6 +115,9 @@ class DigitClassifierFlow(FlowSpec):
     # best_index: integer 
     # ================================
 
+    scores = [i.callback.best_model_score for i in inputs]
+    best_index = np.argmax(scores)
+    
     # sanity check for scores length
     assert len(scores) == len(list(inputs)), "Hmm. Incorrect length for scores."
     # sanity check for best_index
