@@ -73,6 +73,7 @@ class DigitClassifierFlow(FlowSpec):
       max_epochs = config.system.optimizer.max_epochs,
       callbacks = [checkpoint_callback])
 
+    wandb.init()
     trainer.fit(system, dm)
 
     self.dm = dm
