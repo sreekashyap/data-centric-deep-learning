@@ -46,6 +46,7 @@ class PredictionTask(Task):
     # --
     # system = ...
     # ================================
+    system = DigitClassifierSystem.load_from_checkpoint(MODEL_PATH)
     assert system is not None, "System is not loaded."
     return system.eval()
 
@@ -95,6 +96,8 @@ def predict_single(self, data):
     # --
     # logits = ... (use system)
     # ================================
+    
+    logits = self.system.predict_step(im)
     assert logits is not None, "logits is not defined."
 
     # To extract the label, just find the largest logit.
@@ -111,7 +114,9 @@ def predict_single(self, data):
     # --
     # probs = ...do something to logits...
     # ================================
+    probs = F.softmax(logits)
     assert probs is not None, "probs is not defined."
+
     probs = probs.squeeze(0)        # squeeze to (10) shape
     probs = probs.numpy().tolist()  # convert tensor to list
 
