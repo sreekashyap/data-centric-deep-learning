@@ -164,6 +164,26 @@ class TrainIdentifyReview(FlowSpec):
       # Call `predict` on `Trainer` and the test data loader.
       # Convert probabilities back to numpy (make sure 1D).
       # ===============================================
+      X_train = torch.tensor(X[train_index])
+      y_train = torch.tensor(y[train_index])
+      X_test =  torch.tensor(X[test_index])
+      y_test =  torch.tensor(y[test_index])
+
+      train_ds = TensorDataset(X_train, y_train)
+      test_ds = TensorDataset(X_test, y_test)
+      train_dl = DataLoader(train_ds, batch_size=self.config.train.optimizer.batch_size)
+      test_dl = DataLoader(test_ds, batch_size=self.config.train.optimizer.batch_size)
+
+      system = SentimentClassifierSystem(self.config)
+      trainer = Trainer(max_epochs = self.config.train.optimizer.max_epochs, accelerator = "auto")
+
+
+      preds = trainer.predict(system, test_dl, ckpt_path="best")
+      assert preds[0].shape == torch.Size([32, 1])
+      probs_ = torch.cat(preds).squeeze().numpy()
+ 
+
+
       assert probs_ is not None, "`probs_` is not defined."
       probs[test_index] = probs_
 
@@ -204,6 +224,12 @@ class TrainIdentifyReview(FlowSpec):
     # 
     # Our solution is one function call.
     # =============================
+    ranked_label_issues = find_label_issues(
+      self.all_df.label,
+      prob,
+      return_indices_ranked_by = "normalized_margin"
+    )
+
     assert ranked_label_issues is not None, "`ranked_label_issues` not defined."
 
     # save this to class
@@ -300,6 +326,10 @@ class TrainIdentifyReview(FlowSpec):
     # dm.dev_dataset.data = dev slice of self.all_df
     # dm.test_dataset.data = test slice of self.all_df
     # # ====================================
+
+    dm.train_dataset.data = self.all_df.iloc[:train_size]
+    dm.dev_dataset.data = self.all_df.iloc[train_size : (train_size + dev_size)]
+    dm.test_dataset.data = self.all_df.iloc[(train_size + dev_size) :]
 
     # start from scratch
     system = SentimentClassifierSystem(self.config)
